@@ -1,0 +1,33 @@
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Sidebar -->
+<div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-40 transform -translate-x-full transition-transform duration-300">
+    <div class="flex items-center justify-between px-6 py-4 border-b">
+        <span class="text-xl font-bold">Меню</span>
+        <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+    <nav class="mt-4 flex flex-col gap-2 px-6">
+        <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Главная</a>
+        <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Мои вишлисты</a>
+        <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Профиль</a>
+        <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Выйти</a>
+    </nav>
+</div>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        if (sidebar.classList.contains('-translate-x-full')) {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        }
+    }
+</script>
