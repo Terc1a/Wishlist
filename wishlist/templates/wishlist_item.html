@@ -155,48 +155,42 @@
         document.getElementById('item-modal-overlay').classList.remove('hidden');
     }
 
-    async function deleteItem(itemId) {
-        if (!confirm('Вы уверены, что хотите удалить этот элемент?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/delete_item/${itemId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            });
-
-            if (response.ok) {
-                // Закрываем модальное окно
-                closeItemModal();
-                // Удаляем элемент из DOM
-                const itemElement = document.querySelector(`[onclick="openItemModal(${itemId})"]`);
-                if (itemElement) {
-                    itemElement.remove();
-                }
-                // Проверяем, остались ли элементы
-                const items = document.querySelectorAll('.grid > [onclick^="openItemModal"]');
-                if (items.length === 0) {
-                    const grid = document.querySelector('.grid');
-                    grid.innerHTML = '<div class="col-span-3 text-center text-gray-400 py-12">Вишлист пуст</div>';
-                }
-            } else {
-                alert('Произошла ошибка при удалении элемента');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Произошла ошибка при удалении элемента');
-        }
-    }
-
     function closeItemModal() {
         document.getElementById('item-modal').classList.add('hidden');
         document.getElementById('item-modal-overlay').classList.add('hidden');
     }
-</script>
 
-<!-- Добавляем CSRF токен -->
-{% csrf_token %}
+    function deleteItem(itemId) {
+        if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
+            fetch(`/api/wishes/${itemId}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка при удалении элемента');
+                }
+            });
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
 {% endblock %}

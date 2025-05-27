@@ -10,6 +10,7 @@ class Wishlist(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -29,3 +30,18 @@ class Wish(models.Model):
 
     def __str__(self):
         return self.item_name
+
+
+class WishLike(models.Model):
+    """
+    Model to store likes for wishes.
+    """
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('wishlist', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} likes {self.wishlist.item_name}"

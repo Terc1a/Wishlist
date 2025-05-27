@@ -1,12 +1,12 @@
 import json
 from datetime import datetime
 
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 
-from .models import Wish, Wishlist
+from .models import Wish, Wishlist, WishLike
 
 
 def login(request):
@@ -72,8 +72,6 @@ def create_wish(request):
         wishlist = Wishlist.objects.get(id=wishlist_id)
         image = request.FILES.get("item_image")  # Получаем файл
         date = datetime.now()
-        print(image)
-        print(request.POST)
 
         add_wish = Wish(
             item_name=items["item_name"],
@@ -113,7 +111,40 @@ def delete_item(request, item_id):
     """
     try:
         wish = Wish.objects.get(id=item_id)
-        wish.delete()
-        return JsonResponse({"success": True})
+        wishlist = wish.wishlist
+        wishes_count = Wish.objects.filter(wishlist=wishlist).count()
+        if wishes_count <=1:
+            delete_wishlist = Wishlist.objects.get(id=wish.wishlist.id)
+            delete_wishlist.delete()
+            wish.delete()
+            return JsonResponse({"success": True})
+        else:
+            wish.delete()
+            return JsonResponse({"success": True})
     except Wish.DoesNotExist:
         return JsonResponse({"success": False, "error": "Item not found"}, status=404)
+
+
+@login_required
+def set_like(request, wishlist_id):
+    """
+    View to like a wish in a specific wishlist.
+    """
+    if request.method == "POST":
+        try:
+            wishlist = Wishlist.objects.get(id=wishlist_id)
+            print(wishlist.id)
+            like, created = WishLike.objects.get_or_create(user=request.user, wishlist=wishlist)
+            if created:
+                wishlist.likes += 1
+                wishlist.save()
+                return JsonResponse({"success": True, "likes": wishlist.likes})
+            else:
+                like.delete()
+                wishlist.likes -= 1
+                wishlist.save()
+                return JsonResponse({"success": True, "likes": wishlist.likes})
+        except (Wishlist.DoesNotExist, Wish.DoesNotExist):
+            return JsonResponse({"success": False, "error": "Wishlist or wish not found"}, status=404)
+    else:
+        return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)

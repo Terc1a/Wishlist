@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Популярные Вишлисты</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Популярные Вишлисты</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -44,13 +45,24 @@
         </div>
         <div class="space-y-4">
             {% if wishlists %}
-                {% for wl in wishlists %}
+                {% for wl in wishlists|dictsortreversed:"likes"|slice:":10" %}
                     <div class="bg-white shadow rounded p-4 flex flex-col md:flex-row md:items-center justify-between">
                         <div>
                             <div class="text-lg font-semibold text-gray-800">{{ wl.name }}</div>
-                            <div class="text-gray-500">{{wl.user}} | {{ wl.title }}</div>
+                            <div class="text-gray-500">{{ wl.user }} | {{ wl.title }}</div>
                         </div>
-                        <a href="wishlist/{{wl.id}}/" class="mt-2 md:mt-0 bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition">Открыть</a>
+                        <div class="flex items-center gap-4">
+                            <button type="button" onclick="toggleLike({{ wl.id }}, this)" class="flex items-center gap-1 hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 {% if wl.is_liked %}text-red-500{% else %}text-gray-400{% endif %}" 
+                                     fill="{% if wl.is_liked %}currentColor{% else %}none{% endif %}" 
+                                     stroke="currentColor" 
+                                     viewBox="0 0 20 20">
+                                    <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"/>
+                                </svg>
+                                <span class="text-gray-600 likes-count">{{ wl.likes }}</span>
+                            </button>
+                            <a href="wishlist/{{ wl.id }}/" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition">Открыть</a>
+                        </div>
                     </div>
                 {% endfor %}
             {% else %}
@@ -68,6 +80,43 @@
             } else {
                 sidebar.classList.add('-translate-x-full');
                 overlay.classList.add('hidden');
+            }
+        }
+
+        async function toggleLike(wishlistId, button) {
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const response = await fetch(`/set_like/${wishlistId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Обновляем счетчик лайков
+                    const likesCount = button.querySelector('.likes-count');
+                    likesCount.textContent = data.likes_count;
+                    
+                    // Обновляем иконку
+                    const svg = button.querySelector('svg');
+                    if (data.is_liked) {
+                        svg.classList.remove('text-gray-400');
+                        svg.classList.add('text-red-500');
+                        svg.setAttribute('fill', 'currentColor');
+                    } else {
+                        svg.classList.remove('text-red-500');
+                        svg.classList.add('text-gray-400');
+                        svg.setAttribute('fill', 'none');
+                    }
+                } else {
+                    console.error('Server returned error:', await response.text());
+                }
+            } catch (error) {
+                console.error('Error:', error);
             }
         }
     </script>
