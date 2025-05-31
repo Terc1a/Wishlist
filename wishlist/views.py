@@ -30,6 +30,7 @@ def login(request):
 def index(request):
     wishlists = Wishlist.objects.all()
     context = {"wishlists": wishlists}
+    print(request.user)
     return render(request, "index.html", context)
 
 def register(request):
@@ -148,3 +149,12 @@ def set_like(request, wishlist_id):
             return JsonResponse({"success": False, "error": "Wishlist or wish not found"}, status=404)
     else:
         return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
+
+
+#ToDo
+# - Поиск профиля пользователя по логину
+# - Отображение вишлистов в профиле пользователя
+# - Избранные вишлисты и айтемы
+# - Возможность редактирования вишлиста и айтемов(если ты создатель)
+# - Возможность удаления вишлиста
+
