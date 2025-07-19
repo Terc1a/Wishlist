@@ -277,7 +277,21 @@
                 {% if item.price %}
                 <div class="text-blue-600 font-bold mb-1">{{ item.item_price }} ₽</div>
                 {% endif %}
-
+                <div class="flex justify-between items-center mt-2">
+                    <div class="text-gray-500 text-sm">
+                        <span>❤️ {{ item.favorites_count }}</span>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <button onclick="event.stopPropagation(); toggleFavorite({{ item.id }})"
+                            class="px-3 py-1 text-sm rounded-full {% if item.is_favorite %}bg-red-100 text-red-600{% else %}bg-gray-100 text-gray-600{% endif %} hover:bg-red-100 hover:text-red-600 transition-colors">
+                        {% if item.is_favorite %}
+                        ❤️ В избранном
+                        {% else %}
+                        🤍 В избранное
+                        {% endif %}
+                    </button>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% empty %}
@@ -614,5 +628,26 @@
             alert('Ошибка при обновлении вишлиста');
         });
     });
+
+    function toggleFavorite(itemId) {
+        fetch(`/toggle_favorite/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Ошибка при обновлении избранного');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка при обновлении избранного');
+        });
+    }
 </script>
 {% endblock %}

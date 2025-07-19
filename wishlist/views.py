@@ -3,10 +3,12 @@ from datetime import datetime
 
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
+from django.db.models import Count
 
-from .models import Wish, Wishlist, WishLike
+from .models import Wish, Wishlist, WishLike, WishFav
 
 
 def login(request):
@@ -100,13 +102,23 @@ def wishlist_detail(request, wishlist_id):
     """
     try:
         wishlist = Wishlist.objects.get(id=wishlist_id)
-        wishes = Wish.objects.filter(wishlist=wishlist)
-        print(wishes)
-        context = {
+        # Получаем список желаний с количеством избранных и статусом избранного для текущего пользователя
+        wishes = Wish.objects.filter(wishlist=wishlist).annotate(
+            favorites_count=Count('wishfav')
+        )
+
+        if request.user.is_authenticated:
+            # Добавляем информацию о том, добавил ли текущий пользователь предмет в избранное
+            for wish in wishes:
+                wish.is_favorite = WishFav.objects.filter(
+                    wish=wish,
+                    user=request.user
+                ).exists()
+
+        return render(request, "wishlist_item.html", {
             "wishlist": wishlist,
-            "wishes": wishes,
-        }
-        return render(request, "wishlist_item.html", context)
+            "wishes": wishes
+        })
     except Wishlist.DoesNotExist:
         return HttpResponse("Wishlist not found", status=404)
 
@@ -162,9 +174,11 @@ def profile(request):
     """
     user = request.user
     wishlists = Wishlist.objects.filter(user=user)
+    wishfavs = WishFav.objects.filter(user=user)
     context = {
         "user": user,
         "wishlists": wishlists,
+        "favorite_items": wishfavs
     }
     return render(request, "profile.html", context)
 
@@ -216,8 +230,50 @@ def edit_wishlist(request, wishlist_id):
         return JsonResponse({"success": False, "error": "Wishlist not found"}, status=404)
 
 
+@login_required
+def toggle_favorite(request, item_id):
+    """
+    Toggle favorite status for a wish item
+    """
+    try:
+        wish = Wish.objects.get(id=item_id)
+        wish_fav, created = WishFav.objects.get_or_create(
+            wish=wish,
+            user=request.user
+        )
 
-#ToDo
-# - Поиск профиля пользователя по логину
-# - Избранные вишлисты и айтемы
+        if not created:
+            # Если запись уже существовала, удаляем её (убираем из избранного)
+            wish_fav.delete()
+
+        return JsonResponse({
+            'success': True,
+            'is_favorite': created
+        })
+    except Wish.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Предмет не найден'
+        })
+
+
+def search_users(request):
+    query = request.GET.get('query', '')  # получаем параметр поиска из формы
+    if query:
+        # Поиск пользователей с аннотацией количества вишлистов
+        users = User.objects.filter(
+            username__icontains=query
+        ).annotate(
+            wishlists_count=Count('wishlist')
+        )
+    else:
+        users = []
+
+    context = {
+        "found_users": users,
+        "query": query
+    }
+    return render(request, "search_results.html", context)
+
+
 

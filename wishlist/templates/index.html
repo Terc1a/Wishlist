@@ -1,130 +1,95 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Популярные Вишлисты</title>
-    <meta name="csrf-token" content="{{ csrf_token }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Sidebar -->
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-40 transform -translate-x-full transition-transform duration-300">
-        <div class="flex items-center justify-between px-6 py-4 border-b">
-            <span class="text-xl font-bold">Меню</span>
-            <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-        <nav class="mt-4 flex flex-col gap-2 px-6">
-            <a href="/" class="py-2 px-3 rounded hover:bg-gray-100">Главная</a>
-            {% if user.is_authenticated %}
-                <a href="/profile/" class="py-2 px-3 rounded hover:bg-gray-100">Мои вишлисты</a>
-                <a href="/profile/" class="py-2 px-3 rounded hover:bg-gray-100">Профиль</a>
-                <a href="/logout/" class="py-2 px-3 rounded hover:bg-gray-100">Выйти</a>
-            {% else %}
-                <a href="/login/" class="py-2 px-3 rounded hover:bg-gray-100">Войти</a>
-                <a href="/register/" class="py-2 px-3 rounded hover:bg-gray-100">Регистрация</a>
-            {% endif %}
-        </nav>
+{% extends 'base.html' %}
+
+{% block title %}Популярные Вишлисты{% endblock %}
+
+{% block header %}
+<div class="flex items-center justify-between flex-1">
+    <h1 class="text-2xl font-bold text-gray-800 shrink-0">Популярные Вишлисты</h1>
+    <form action="{% url 'search_users' %}" method="GET" class="relative ml-8">
+        <input type="text"
+               name="query"
+               placeholder="Найти пользователя"
+               class="w-64 text-sm pl-9 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors"
+               required>
+        <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+    </form>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Main content -->
+<main class="max-w-3xl mx-auto">
+    <div class="flex justify-end mb-6">
+        <a href="{% url 'create_wishlist' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Создать вишлист</a>
     </div>
-    <!-- Overlay -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-30 z-30 hidden" onclick="toggleSidebar()"></div>
-    <!-- Header -->
-    <header class="bg-white shadow-md py-4 px-6 flex items-center justify-between">
-        <button onclick="toggleSidebar()" class="text-gray-700 focus:outline-none">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-        </button>
-        <h1 class="text-2xl font-bold text-gray-800">Популярные Вишлисты</h1>
-        <div></div>
-    </header>
-    <!-- Main content -->
-    <main class="max-w-3xl mx-auto mt-8 px-4">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold">Список вишлистов</h2>
-            <a href="{% url 'create_wishlist' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Создать вишлист</a>
-        </div>
-        <div class="space-y-4">
-            {% if wishlists %}
-                {% for wl in wishlists|dictsortreversed:"likes"|slice:":10" %}
-                    <div class="bg-white shadow rounded p-4 flex flex-col md:flex-row md:items-center justify-between">
-                        <div>
-                            <div class="text-lg font-semibold text-gray-800">{{ wl.name }}</div>
-                            <div class="text-gray-500">{{ wl.user }} | {{ wl.title }}</div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <button type="button" onclick="toggleLike({{ wl.id }}, this)" class="flex items-center gap-1 hover:scale-110 transition-transform">
-                                <svg class="w-5 h-5 {% if wl.is_liked %}text-red-500{% else %}text-gray-400{% endif %}"
-                                     fill="{% if wl.is_liked %}currentColor{% else %}none{% endif %}"
-                                     stroke="currentColor"
-                                     viewBox="0 0 20 20">
-                                    <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"/>
-                                </svg>
-                                <span class="text-gray-600 likes-count">{{ wl.likes }}</span>
-                            </button>
-                            <a href="wishlist/{{ wl.id }}/" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition">Открыть</a>
-                        </div>
+    <div class="space-y-4">
+        {% if wishlists %}
+            {% for wl in wishlists|dictsortreversed:"likes"|slice:":10" %}
+                <div class="bg-white shadow rounded p-4 flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                        <div class="text-lg font-semibold text-gray-800">{{ wl.title }}</div>
+                        <div class="text-gray-500">{{ wl.user }}</div>
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-gray-500 text-center py-8">Вишлистов пока нет. Создайте свой первый!</div>
-            {% endif %}
-        </div>
-    </main>
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
+                    <div class="flex items-center gap-4">
+                        <button type="button" onclick="toggleLike({{ wl.id }}, this)" class="flex items-center gap-1 hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 {% if wl.is_liked %}text-red-500{% else %}text-gray-400{% endif %}"
+                                 fill="{% if wl.is_liked %}currentColor{% else %}none{% endif %}"
+                                 stroke="currentColor"
+                                 viewBox="0 0 20 20">
+                                <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"/>
+                            </svg>
+                            <span class="text-gray-600 likes-count">{{ wl.likes }}</span>
+                        </button>
+                        <a href="{% url 'wishlist_detail' wl.id %}" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition">Открыть</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-gray-500 text-center py-8">Вишлистов пока нет. Создайте свой первый!</div>
+        {% endif %}
+    </div>
+</main>
 
-        async function toggleLike(wishlistId, button) {
-            try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const response = await fetch(`/set_like/${wishlistId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'same-origin'
-                });
+<script>
+    async function toggleLike(wishlistId, button) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const response = await fetch(`/set_like/${wishlistId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    // Обновляем счетчик лайков
-                    const likesCount = button.querySelector('.likes-count');
-                    likesCount.textContent = data.likes_count;
+            if (response.ok) {
+                const data = await response.json();
+                const likesCount = button.querySelector('.likes-count');
+                likesCount.textContent = data.likes;
 
-                    // Обновляем иконку
-                    const svg = button.querySelector('svg');
-                    if (data.is_liked) {
-                        svg.classList.remove('text-gray-400');
-                        svg.classList.add('text-red-500');
-                        svg.setAttribute('fill', 'currentColor');
-                    } else {
-                        svg.classList.remove('text-red-500');
-                        svg.classList.add('text-gray-400');
-                        svg.setAttribute('fill', 'none');
-                        svg.setAttribute('fill', 'none');
-                    }
+                const svg = button.querySelector('svg');
+                if (data.success) {
+                    svg.classList.remove('text-gray-400');
+                    svg.classList.add('text-red-500');
+                    svg.setAttribute('fill', 'currentColor');
                 } else {
-                    console.error('Server returned error:', await response.text());
+                    svg.classList.remove('text-red-500');
+                    svg.classList.add('text-gray-400');
+                    svg.setAttribute('fill', 'none');
                 }
-            } catch (error) {
-                console.error('Error:', error);
             }
+        } catch (error) {
+            console.error('Error:', error);
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}
