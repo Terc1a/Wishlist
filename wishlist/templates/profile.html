@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль пользователя</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Навигация -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between">
+                <div class="flex space-x-7">
+                    <div>
+                        <a href="{% url 'index' %}" class="flex items-center py-4 px-2">
+                            <span class="font-semibold text-gray-500 text-lg">WishList</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{% url 'index' %}" class="py-2 px-2 font-medium text-gray-500 hover:text-blue-500 transition duration-300">Главная</a>
+
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Профиль -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                <div class="p-6">
+                    <div class="flex items-center space-x-6">
+                        <div class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span class="text-3xl text-gray-600">{{ user.username|first|upper }}</span>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">{{ user.username }}</h1>
+                            <p class="text-gray-600">{{ user.email }}</p>
+                            {% if user.profile.bio %}
+                                <p class="mt-2 text-gray-500">{{ user.profile.bio }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Вишлисты -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">Мои вишлисты</h2>
+                        <a href="{% url 'create_wishlist' %}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition duration-300">
+                            Создать вишлист
+                        </a>
+                    </div>
+                    <div class="space-y-4">
+                        {% for wishlist in wishlists %}
+                        <div class="flex items-center justify-between bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition duration-200">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-1">
+                                    <a href="{% url 'wishlist_detail' wishlist.id %}" class="font-medium text-blue-600 hover:text-blue-800 transition duration-300">
+                                        {{ wishlist.name }}
+                                    </a>
+                                    <p class="text-sm text-gray-500">{{ wishlist.items.count }} элементов</p>
+                                </div>
+                            </div>
+                            {% if user == request.user %}
+                            <div class="flex items-center space-x-2">
+                                <a href="{% url 'wishlist_detail' wishlist.id %}" class="text-blue-500 hover:text-blue-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </a>
+                                <form method="post" action="{% url 'delete_wishlist' wishlist.id %}" class="inline" onsubmit="return confirm('Удалить этот вишлист?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-500 hover:text-red-700">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-8">
+                            <p class="text-gray-500">Вишлистов пока нет</p>
+                            <a href="{% url 'create_wishlist' %}" class="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md transition duration-300">
+                                Создать первый вишлист
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

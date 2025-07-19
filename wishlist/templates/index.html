@@ -19,10 +19,15 @@
             </button>
         </div>
         <nav class="mt-4 flex flex-col gap-2 px-6">
-            <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Главная</a>
-            <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Мои вишлисты</a>
-            <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Профиль</a>
-            <a href="#" class="py-2 px-3 rounded hover:bg-gray-100">Выйти</a>
+            <a href="/" class="py-2 px-3 rounded hover:bg-gray-100">Главная</a>
+            {% if user.is_authenticated %}
+                <a href="/profile/" class="py-2 px-3 rounded hover:bg-gray-100">Мои вишлисты</a>
+                <a href="/profile/" class="py-2 px-3 rounded hover:bg-gray-100">Профиль</a>
+                <a href="/logout/" class="py-2 px-3 rounded hover:bg-gray-100">Выйти</a>
+            {% else %}
+                <a href="/login/" class="py-2 px-3 rounded hover:bg-gray-100">Войти</a>
+                <a href="/register/" class="py-2 px-3 rounded hover:bg-gray-100">Регистрация</a>
+            {% endif %}
         </nav>
     </div>
     <!-- Overlay -->
@@ -53,9 +58,9 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <button type="button" onclick="toggleLike({{ wl.id }}, this)" class="flex items-center gap-1 hover:scale-110 transition-transform">
-                                <svg class="w-5 h-5 {% if wl.is_liked %}text-red-500{% else %}text-gray-400{% endif %}" 
-                                     fill="{% if wl.is_liked %}currentColor{% else %}none{% endif %}" 
-                                     stroke="currentColor" 
+                                <svg class="w-5 h-5 {% if wl.is_liked %}text-red-500{% else %}text-gray-400{% endif %}"
+                                     fill="{% if wl.is_liked %}currentColor{% else %}none{% endif %}"
+                                     stroke="currentColor"
                                      viewBox="0 0 20 20">
                                     <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"/>
                                 </svg>
@@ -100,7 +105,7 @@
                     // Обновляем счетчик лайков
                     const likesCount = button.querySelector('.likes-count');
                     likesCount.textContent = data.likes_count;
-                    
+
                     // Обновляем иконку
                     const svg = button.querySelector('svg');
                     if (data.is_liked) {
@@ -110,6 +115,7 @@
                     } else {
                         svg.classList.remove('text-red-500');
                         svg.classList.add('text-gray-400');
+                        svg.setAttribute('fill', 'none');
                         svg.setAttribute('fill', 'none');
                     }
                 } else {

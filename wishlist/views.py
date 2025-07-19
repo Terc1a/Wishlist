@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
@@ -26,6 +26,10 @@ def login(request):
     else:
         return render(request, "auth.html")
 
+
+def logout_view(request):
+    logout(request)
+    return redirect('index')
 
 def index(request):
     wishlists = Wishlist.objects.all()
@@ -151,10 +155,69 @@ def set_like(request, wishlist_id):
         return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
 
+@login_required
+def profile(request):
+    """
+    View to display the user's profile.
+    """
+    user = request.user
+    wishlists = Wishlist.objects.filter(user=user)
+    context = {
+        "user": user,
+        "wishlists": wishlists,
+    }
+    return render(request, "profile.html", context)
+
+
+@login_required
+def delete_wishlist(request, wishlist_id):
+    """
+    View to delete a specific wishlist.
+    """
+    try:
+        wishlist = Wishlist.objects.get(id=wishlist_id, user=request.user)
+        wishlist.delete()
+        return JsonResponse({"success": True})
+    except Wishlist.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Wishlist not found"}, status=404)
+
+
+@login_required
+def edit_wishlist_item(request, item_id):
+    """
+    View to edit a specific wishlist item
+    """
+    try:
+        item = Wish.objects.get(id=item_id)
+        item.item_name= request.POST.get("item_name")
+        item.item_description = request.POST.get("item_description")
+        item.item_url = request.POST.get("item_url")
+        item.item_price = float(request.POST.get("item_price"))
+        if "item_image" in request.FILES:
+            item.item_image = request.FILES["item_image"]  # Handle optional image
+        item.save()
+        return JsonResponse({"success": True})
+    except Wish.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Wishlist not found"}, status=404)
+
+
+@login_required
+def edit_wishlist(request, wishlist_id):
+    """
+    View to edit a specific wishlist
+    """
+    try:
+        wishlist = Wishlist.objects.get(id=wishlist_id, user=request.user)
+        wishlist.title = request.POST.get("name")
+        wishlist.description = request.POST.get("description")
+        wishlist.save()
+        return JsonResponse({"success": True})
+    except Wishlist.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Wishlist not found"}, status=404)
+
+
+
 #ToDo
 # - Поиск профиля пользователя по логину
-# - Отображение вишлистов в профиле пользователя
 # - Избранные вишлисты и айтемы
-# - Возможность редактирования вишлиста и айтемов(если ты создатель)
-# - Возможность удаления вишлиста
 
