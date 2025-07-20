@@ -14,9 +14,9 @@
         </div>
 
         <!-- Форма входа -->
-        <form id="login-form" method="post" action="/login/" class="">
+        <form id="login-form" class="">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{{ request.GET.next }}">
+            <input type="hidden" name="next" value="{{ next }}">
             <h2 class="text-xl font-bold mb-4 text-center">Вход</h2>
             <div class="mb-4">
                 <label class="block mb-1 font-semibold" for="login-username">Имя пользователя</label>
@@ -26,11 +26,12 @@
                 <label class="block mb-1 font-semibold" for="login-password">Пароль</label>
                 <input class="w-full border rounded px-3 py-2" type="password" id="login-password" name="password" required>
             </div>
+            <div id="login-error" class="text-red-500 mb-4 hidden"></div>
             <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Войти</button>
         </form>
 
         <!-- Форма регистрации -->
-        <form id="register-form" method="post" action="/register/" class="hidden">
+        <form id="register-form" class="hidden">
             {% csrf_token %}
             <h2 class="text-xl font-bold mb-4 text-center">Регистрация</h2>
             <div class="mb-4">
@@ -49,7 +50,8 @@
                 <label class="block mb-1 font-semibold" for="reg-password2">Повторите пароль</label>
                 <input class="w-full border rounded px-3 py-2" type="password" id="reg-password2" name="reg_password2" required>
             </div>
-            <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Зарегистрир��ваться</button>
+            <div id="register-error" class="text-red-500 mb-4 hidden"></div>
+            <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Зарегистрироваться</button>
         </form>
     </div>
 
@@ -58,6 +60,33 @@
         const regBtn = document.getElementById('show-register');
         const loginForm = document.getElementById('login-form');
         const regForm = document.getElementById('register-form');
+        const loginError = document.getElementById('login-error');
+        const registerError = document.getElementById('register-error');
+
+        function showError(element, message) {
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        function hideError(element) {
+            element.textContent = '';
+            element.classList.add('hidden');
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
         loginBtn.addEventListener('click', () => {
             loginForm.classList.remove('hidden');
@@ -66,6 +95,7 @@
             loginBtn.classList.remove('bg-gray-200', 'text-gray-700');
             regBtn.classList.remove('bg-blue-600', 'text-white');
             regBtn.classList.add('bg-gray-200', 'text-gray-700');
+            hideError(loginError);
         });
 
         regBtn.addEventListener('click', () => {
@@ -75,65 +105,65 @@
             regBtn.classList.remove('bg-gray-200', 'text-gray-700');
             loginBtn.classList.remove('bg-blue-600', 'text-white');
             loginBtn.classList.add('bg-gray-200', 'text-gray-700');
+            hideError(registerError);
         });
 
-        // Обработка формы логина
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideError(loginError);
+
             const formData = new FormData(loginForm);
+            const csrftoken = getCookie('csrftoken');
 
-            fetch('/login/', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    window.location.href = `/error/${response.status}/`;
-                    throw new Error('Network response was not ok');
-                }
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    return response.json();
-                }
-                // Если успешный вход, используем URL из next параметра или переходим на главную
-                const nextUrl = formData.get('next') || '/';
-                window.location.href = nextUrl;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                window.location.href = '/error/500/';
-            });
-        });
+            try {
+                const response = await fetch('/login/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin'
+                });
 
-        // Обработка формы регистрации
-        regForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(regForm);
+                const data = await response.json();
 
-            fetch('/register/', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    window.location.href = `/error/${response.status}/`;
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
                 if (data.success) {
                     window.location.href = data.redirect;
                 } else {
-                    window.location.href = '/error/500/';
+                    showError(loginError, data.error);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                window.location.href = '/error/500/';
-            });
+            } catch (error) {
+                showError(loginError, 'Произошла ошибка при входе');
+            }
+        });
+
+        regForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError(registerError);
+
+            const formData = new FormData(regForm);
+            const csrftoken = getCookie('csrftoken');
+
+            try {
+                const response = await fetch('/register/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    showError(registerError, data.error);
+                }
+            } catch (error) {
+                showError(registerError, 'Произошла ошибка при регистрации');
+            }
         });
     </script>
 </body>

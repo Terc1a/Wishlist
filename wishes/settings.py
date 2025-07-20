@@ -28,6 +28,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']  # В продакшене замените на реальные домены
 
+# Настройки для корректной обработки ошибок
+CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 
 # Application definition
 
@@ -121,6 +123,7 @@ MEDIA_URL = '/media/'
 
 # URL для редиректа неавторизованных пользователей
 LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

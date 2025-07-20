@@ -7,10 +7,14 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.db.models import Count
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
+from django.views.decorators.http import require_http_methods
 
 from .models import Wish, Wishlist, WishLike, WishFav
 
 
+@require_http_methods(["GET", "POST"])
 def login(request):
     """
     View to handle user login.
@@ -18,25 +22,28 @@ def login(request):
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
-        next_url = request.POST.get("next", "index")
+        next_url = request.POST.get("next", "/")
+
+        if not username or not password:
+            return JsonResponse({
+                "success": False,
+                "error": "Введите логин и пароль"
+            }, status=400)
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             auth_login(request, user)
-            # Если есть next параметр и он не пустой, перенаправляем туда
-            if next_url and next_url != "index":
-                return redirect(next_url)
-            return redirect("index")
-        else:
-            # Неверные данные — показать ошибку
-            return render(request, "auth.html", {
-                "error": "Неверный логин или пароль",
-                "next": next_url
+            return JsonResponse({
+                "success": True,
+                "redirect": next_url
             })
-    else:
-        # Передаем next параметр в шаблон при GET запросе
-        return render(request, "auth.html", {"next": request.GET.get("next", "")})
+        else:
+            return JsonResponse({
+                "success": False,
+                "error": "Неверный логин или пароль"
+            }, status=401)
 
+    return render(request, "auth.html", {"next": request.GET.get("next", "/")})
 
 def logout_view(request):
     logout(request)
@@ -343,27 +350,23 @@ def search_users(request):
     return render(request, "search_results.html", context)
 
 
-def handler404(request, exception):
-    context = {
+def handler404(request, exception=None):
+    return render(request, 'error.html', {
         'error_code': 404,
         'error_title': 'Страница не найдена',
         'error_message': 'К сожалению, запрашиваемая страница не существует.'
-    }
-    return render(request, 'error.html', context, status=404)
+    }, status=404)
 
-def handler500(request):
-    context = {
+def handler500(request, *args, **argv):
+    return render(request, 'error.html', {
         'error_code': 500,
         'error_title': 'Ошибка сервера',
         'error_message': 'Произошла внутренняя ошибка сервера. Попробуйте позже.'
-    }
-    return render(request, 'error.html', context, status=500)
+    }, status=500)
 
-def handler403(request, exception):
-    context = {
+def handler403(request, exception=None):
+    return render(request, 'error.html', {
         'error_code': 403,
         'error_title': 'Доступ запрещен',
         'error_message': 'У вас нет прав для доступа к этой странице.'
-    }
-    return render(request, 'error.html', context, status=403)
-
+    }, status=403)
