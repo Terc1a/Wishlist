@@ -28,6 +28,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']  # В продакшене замените на реальные домены
 
+
 # Настройки для корректной обработки ошибок
 CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 

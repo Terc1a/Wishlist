@@ -62,6 +62,10 @@ def register(request):
     View to handle user registration.
     """
     if request.method == "POST":
+        print("POST data:", request.POST)  # Отладочный вывод
+        print("Files:", request.FILES)      # Отладочный вывод
+        print("Headers:", request.headers)   # Отладочный вывод
+
         username = request.POST.get("reg_username")
         email = request.POST.get("reg_email")
         password1 = request.POST.get("reg_password1")
