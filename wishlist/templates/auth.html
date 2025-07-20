@@ -30,7 +30,7 @@
         </form>
 
         <!-- Форма регистрации -->
-        <form id="register-form" method="post" class="hidden">
+        <form id="register-form" method="post" action="/register/" class="hidden">
             {% csrf_token %}
             <h2 class="text-xl font-bold mb-4 text-center">Регистрация</h2>
             <div class="mb-4">
@@ -80,30 +80,41 @@
             loginBtn.classList.add('bg-gray-200', 'text-gray-700');
         });
 
-        // Обработка формы регистрации через AJAX остается как есть
+        // Обработка формы р��гистрации через AJAX остается как есть
         regForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(regForm);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             fetch('/register/', {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    // При получении ошибки 500 или другой, редиректим на страницу ошибки
+                    window.location.href = `/error/${response.status}/`;
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     window.location.href = data.redirect;
                 } else {
-                    alert(data.error || 'Ошибка при регистрации');
+                    // При получении ошибки от сервера, тоже редиректим на страницу ошибки
+                    window.location.href = '/error/500/';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Произошла ошибка при регистрации');
+                // При любых других ошибках также редиректим на страницу ошибки
+                window.location.href = '/error/500/';
             });
         });
     </script>

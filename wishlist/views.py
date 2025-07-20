@@ -49,7 +49,59 @@ def index(request):
     return render(request, "index.html", context)
 
 def register(request):
-    pass
+    """
+    View to handle user registration.
+    """
+    if request.method == "POST":
+        username = request.POST.get("reg_username")
+        email = request.POST.get("reg_email")
+        password1 = request.POST.get("reg_password1")
+        password2 = request.POST.get("reg_password2")
+
+        # Проверяем валидность данных
+        if not username or not email or not password1 or not password2:
+            return JsonResponse({
+                "success": False,
+                "error": "Все поля должны быть заполнены"
+            })
+
+        if password1 != password2:
+            return JsonResponse({
+                "success": False,
+                "error": "Пароли не совпадают"
+            })
+
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({
+                "success": False,
+                "error": "Пользователь с таким именем уже существует"
+            })
+
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({
+                "success": False,
+                "error": "Пользователь с таким email уже существует"
+            })
+
+        # Создаем нового пользователя
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password1
+            )
+            auth_login(request, user)
+            return JsonResponse({
+                "success": True,
+                "redirect": "/"
+            })
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": "Ошибка при создании пользователя"
+            })
+
+    return render(request, "auth.html")
 
 
 @login_required
