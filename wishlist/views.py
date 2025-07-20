@@ -18,15 +18,24 @@ def login(request):
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
+        next_url = request.POST.get("next", "index")
+
         user = authenticate(request, username=username, password=password)
         if user is not None:
             auth_login(request, user)
+            # Если есть next параметр и он не пустой, перенаправляем туда
+            if next_url and next_url != "index":
+                return redirect(next_url)
             return redirect("index")
         else:
             # Неверные данные — показать ошибку
-            return render(request, "auth.html", {"error": "Неверный логин или пароль"})
+            return render(request, "auth.html", {
+                "error": "Неверный логин или пароль",
+                "next": next_url
+            })
     else:
-        return render(request, "auth.html")
+        # Передаем next параметр в шаблон при GET запросе
+        return render(request, "auth.html", {"next": request.GET.get("next", "")})
 
 
 def logout_view(request):
