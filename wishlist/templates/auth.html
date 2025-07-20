@@ -80,24 +80,20 @@
             loginBtn.classList.add('bg-gray-200', 'text-gray-700');
         });
 
-        // Обработка формы р��гистрации через AJAX остается как есть
+        // Обработка формы регистрации через AJAX остается как есть
         regForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(regForm);
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             fetch('/register/', {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
+                // Убираем заголовки CSRF, так как токен уже есть в форме через {% csrf_token %}
                 credentials: 'same-origin'
             })
             .then(response => {
                 if (!response.ok) {
-                    // При получении ошибки 500 или другой, редиректим на страницу ошибки
+                    // При получении ошибки, редиректим на страницу ошибки
                     window.location.href = `/error/${response.status}/`;
                     throw new Error('Network response was not ok');
                 }
@@ -107,13 +103,11 @@
                 if (data.success) {
                     window.location.href = data.redirect;
                 } else {
-                    // При получении ошибки от сервера, тоже редиректим на страницу ошибки
                     window.location.href = '/error/500/';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                // При любых других ошибках также редиректим на страницу ошибки
                 window.location.href = '/error/500/';
             });
         });
