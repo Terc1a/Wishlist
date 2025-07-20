@@ -55,6 +55,8 @@ def index(request):
     print(request.user)
     return render(request, "index.html", context)
 
+@ensure_csrf_cookie
+@require_http_methods(["GET", "POST"])
 def register(request):
     """
     View to handle user registration.
