@@ -96,6 +96,7 @@ def create_wish(request):
         return render(request, "index.html")
 
 
+@login_required
 def wishlist_detail(request, wishlist_id):
     """
     View to display the details of a specific wishlist.
@@ -122,12 +123,17 @@ def wishlist_detail(request, wishlist_id):
     except Wishlist.DoesNotExist:
         return HttpResponse("Wishlist not found", status=404)
 
+@login_required
 def delete_item(request, item_id):
     """
     View to delete a specific item from a wishlist.
     """
     try:
         wish = Wish.objects.get(id=item_id)
+        # Проверяем, что текущий пользователь является владельцем вишлиста
+        if wish.wishlist.user != request.user:
+            return JsonResponse({"success": False, "error": "Недостаточно прав"}, status=403)
+
         wishlist = wish.wishlist
         wishes_count = Wish.objects.filter(wishlist=wishlist).count()
         if wishes_count <=1:
@@ -276,4 +282,27 @@ def search_users(request):
     return render(request, "search_results.html", context)
 
 
+def handler404(request, exception):
+    context = {
+        'error_code': 404,
+        'error_title': 'Страница не найдена',
+        'error_message': 'К сожалению, запрашиваемая страница не существует.'
+    }
+    return render(request, 'error.html', context, status=404)
+
+def handler500(request):
+    context = {
+        'error_code': 500,
+        'error_title': 'Ошибка сервера',
+        'error_message': 'Произошла внутренняя ошибка сервера. Попробуйте позже.'
+    }
+    return render(request, 'error.html', context, status=500)
+
+def handler403(request, exception):
+    context = {
+        'error_code': 403,
+        'error_title': 'Доступ запрещен',
+        'error_message': 'У вас нет прав для доступа к этой странице.'
+    }
+    return render(request, 'error.html', context, status=403)
 

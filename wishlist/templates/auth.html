@@ -82,6 +82,32 @@
             });
         });
 
+        regForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(regForm);
+
+            fetch('/register/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    alert(data.error || 'Ошибка при регистрации');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при регистрации');
+            });
+        });
+
         loginBtn.addEventListener('click', () => {
             loginForm.classList.remove('hidden');
             regForm.classList.add('hidden');
