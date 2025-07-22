@@ -247,12 +247,14 @@ def set_like(request, wishlist_id):
 
 
 @login_required
-def profile(request):
+def profile(request, user_id):
     """
     View to display the user's profile.
     """
-    user = request.user
+
+    user = User.objects.get(id=user_id)
     wishlists = Wishlist.objects.filter(user=user)
+
     wishfavs = WishFav.objects.filter(user=user)
     context = {
         "user": user,
