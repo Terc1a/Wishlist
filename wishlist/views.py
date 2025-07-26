@@ -169,7 +169,6 @@ def create_wish(request):
         return render(request, "index.html")
 
 
-@login_required
 def wishlist_detail(request, wishlist_id):
     """
     View to display the details of a specific wishlist.
