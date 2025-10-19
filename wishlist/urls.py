@@ -17,5 +17,7 @@ urlpatterns = [
     path('update_item/<int:item_id>/', views.edit_wishlist_item, name='change_item'),
     path('update_wishlist/<int:wishlist_id>/', views.edit_wishlist, name='change_wishlist'),
     path('toggle_favorite/<int:item_id>/', views.toggle_favorite, name='toggle_favorite'),
-    path('search_users/', views.search_users, name='search_users')
+    path('search_users/', views.search_users, name='search_users'),
+    path('reserve_item/<int:item_id>/', views.reserve_item, name="reserve_item"),
+    path('cancel_reservation/<int:item_id>/', views.cancel_reservation, name="cancel_reservation"),
 ]

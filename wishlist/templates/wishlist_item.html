@@ -4,6 +4,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <div id="wishlist-data" data-wishlist-id="{{ wishlist.id }}"></div>
+
 <!-- Модальное окно для просмотра элемента -->
 <div id="item-modal-overlay" class="fixed inset-0 bg-black bg-opacity-40 z-50 hidden" onclick="closeItemModal()"></div>
 <div id="item-modal"
@@ -18,6 +19,40 @@
     Цена: <div id="modal-price" class="text-blue-600 font-bold mb-2"></div>
     Описание: <p id="modal-desc" class="text-gray-700 mb-4"></p>
     Ссылка:<br> <a id="modal-link" href="#" target="_blank" class="text-blue-500 underline text-sm break-all mb-4"></a>
+
+    {% if user.is_authenticated and user.id != wishlist.user.id %}
+    <div id="reservation-section" class="mt-6 pt-6 border-t">
+        <div id="already-reserved" class="hidden mb-4">
+            <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V7z" clip-rule="evenodd"/>
+                </svg>
+                <span>Этот подарок уже забронирован</span>
+            </div>
+        </div>
+        <div id="reserve-button" class="hidden">
+            <button onclick="reserveItem(currentItemId)"
+                class="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Хочу подарить!
+            </button>
+        </div>
+        <div id="reserved-by-you" class="hidden">
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span>Вы забронировали этот подарок!</span>
+            </div>
+            <button onclick="cancelReservation(currentItemId)"
+                class="w-full mt-3 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                Отменить бронь
+            </button>
+        </div>
+    </div>
+    {% endif %}
 
     {% if user.is_authenticated %}
     {% if user.id == wishlist.user.id %}
@@ -185,7 +220,6 @@
     </form>
 </div>
 
-
 <div class="max-w-5xl mx-auto py-8">
     <div class="flex justify-between items-start mb-8">
         <div>
@@ -222,19 +256,34 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {% for item in wishes %}
-        <div class="block bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer border border-gray-200 hover:border-blue-400"
-            onclick="openItemModal({{ item.id }})" data-item='{
-               "name": "{{ item.item_name|escapejs }}",
-               "desc": "{{ item.item_description|escapejs }}",
-               "price": "{{ item.item_price|default_if_none:"Не указана" }}",
-               "link": "{{ item.item_url|default_if_none:"Не указана"|escapejs }}",
-               "image": "{% if item.item_image %}{{ item.item_image.url }}{% endif %}"
-           }'>
+        <div class="block bg-white rounded-lg shadow hover:shadow-lg transition cursor-pointer border border-gray-200 hover:border-blue-400 relative"
+            onclick="openItemModal({{ item.id }})" 
+            data-item='{
+                "name": "{{ item.item_name|escapejs }}",
+                "desc": "{{ item.item_description|escapejs }}",
+                "price": "{{ item.item_price|default_if_none:"" }}",
+                "link": "{{ item.item_url|default_if_none:""|escapejs }}",
+                "image": "{% if item.item_image %}{{ item.item_image.url }}{% endif %}",
+                "is_reserved": "{{ item.is_reserved|default:False }}",
+                "reserved_by_me": "{{ item.reserved_by_me|default:False }}"
+            }'>
+            
+            {% if item.is_reserved %}
+            <div class="absolute inset-0 bg-black bg-opacity-40 rounded-lg z-10 flex items-center justify-center">
+                <div class="text-white text-center">
+                    <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="font-semibold">Забронировано</span>
+                </div>
+            </div>
+            {% endif %}
+
             {% if item.item_image %}
             <img src="{{ item.item_image.url }}" alt="{{ item.item_name }}"
-                class="w-full h-48 object-cover rounded-t-lg">
+                class="w-full h-48 object-cover rounded-t-lg {% if item.is_reserved %}opacity-70{% endif %}">
             {% else %}
-            <div class="w-full h-48 bg-gray-100 flex items-center justify-center rounded-t-lg text-gray-400 text-6xl">
+            <div class="w-full h-48 bg-gray-100 flex items-center justify-center rounded-t-lg text-gray-400 text-6xl {% if item.is_reserved %}opacity-70{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -245,7 +294,7 @@
             <div class="p-4">
                 <h2 class="text-xl font-semibold mb-1 truncate">{{ item.item_name }}</h2>
                 <p class="text-gray-600 text-sm mb-2 line-clamp-2">{{ item.item_description }}</p>
-                {% if item.price %}
+                {% if item.item_price %}
                 <div class="text-blue-600 font-bold mb-1">{{ item.item_price }} ₽</div>
                 {% endif %}
                 <div class="flex justify-between items-center mt-2">
@@ -283,7 +332,7 @@
     <form id="edit-wishlist-form" class="space-y-6">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Название</label>
-            <input type="text" id="edit-wishlist-name" required value="{{ wishlist.name }}"
+            <input type="text" id="edit-wishlist-name" required value="{{ wishlist.title }}"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
         </div>
 
@@ -308,37 +357,28 @@
 <script>
     let currentItemId = null;
 
-    function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebar-overlay');
-        if (sidebar.classList.contains('-translate-x-full')) {
-            sidebar.classList.remove('-translate-x-full');
-            overlay.classList.remove('hidden');
-        } else {
-            sidebar.classList.add('-translate-x-full');
-            overlay.classList.add('hidden');
-        }
-    }
-
     function openItemModal(itemId) {
-        currentItemId = itemId;  // Сохраняем ID текущего элемента
-        // Найти div с data-item по itemId
+        currentItemId = itemId;
         const cards = document.querySelectorAll('[onclick^="openItemModal"]');
         let data = null;
         for (const card of cards) {
             if (card.getAttribute('onclick') === `openItemModal(${itemId})`) {
-                data = JSON.parse(card.getAttribute('data-item'));
-                break;
+                try {
+                    data = JSON.parse(card.getAttribute('data-item'));
+                    break;
+                } catch (e) {
+                    console.error('Error parsing item data:', e);
+                    return;
+                }
             }
         }
         if (!data) return;
 
-        // Заполнить модалку
         document.getElementById('modal-title').textContent = data.name || '';
         document.getElementById('modal-desc').textContent = data.desc || '';
         document.getElementById('modal-price').textContent = data.price ? data.price + ' ₽' : '';
         const link = document.getElementById('modal-link');
-        if (data.link) {
+        if (data.link && data.link !== "Не указана") {
             link.href = data.link;
             link.textContent = data.link;
             link.classList.remove('hidden');
@@ -348,7 +388,6 @@
             link.classList.add('hidden');
         }
 
-        // Картинка
         const imgDiv = document.getElementById('modal-image');
         imgDiv.innerHTML = '';
         if (data.image) {
@@ -361,7 +400,25 @@
             imgDiv.innerHTML = '<div class="w-full h-56 bg-gray-100 flex items-center justify-center rounded-lg text-gray-400 text-6xl"><svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a4 4 0 004 4h10a4 4 0 004-4V7a4 4 0 00-4-4H7a4 4 0 00-4 4z"/></svg>';
         }
 
-        // Показать модальное окно
+        const reservationSection = document.getElementById('reservation-section');
+        const reserveButton = document.getElementById('reserve-button');
+        const reservedByYou = document.getElementById('reserved-by-you');
+        const alreadyReserved = document.getElementById('already-reserved');
+
+        if (reservationSection) {
+            reserveButton.classList.add('hidden');
+            reservedByYou.classList.add('hidden');
+            alreadyReserved.classList.add('hidden');
+
+            if (data.reserved_by_me === 'True') {
+                reservedByYou.classList.remove('hidden');
+            } else if (data.is_reserved === 'True') {
+                alreadyReserved.classList.remove('hidden');
+            } else {
+                reserveButton.classList.remove('hidden');
+            }
+        }
+
         document.getElementById('item-modal').classList.remove('hidden');
         document.getElementById('item-modal-overlay').classList.remove('hidden');
     }
@@ -369,6 +426,48 @@
     function closeItemModal() {
         document.getElementById('item-modal').classList.add('hidden');
         document.getElementById('item-modal-overlay').classList.add('hidden');
+    }
+
+    function reserveItem(itemId) {
+        fetch(`/reserve_item/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Ошибка при бронировании подарка');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка при бронировании подарка');
+        });
+    }
+
+    function cancelReservation(itemId) {
+        fetch(`/cancel_reservation/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Ошибка при бронировании подарка');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ошибка при бронировании подарка');
+        });
     }
 
     function deleteItem(itemId) {
@@ -390,24 +489,26 @@
     }
 
     function changeItem(itemId) {
-        // Найти данные элемента
         const cards = document.querySelectorAll('[onclick^="openItemModal"]');
         let data = null;
         for (const card of cards) {
             if (card.getAttribute('onclick') === `openItemModal(${itemId})`) {
-                data = JSON.parse(card.getAttribute('data-item'));
-                break;
+                try {
+                    data = JSON.parse(card.getAttribute('data-item'));
+                    break;
+                } catch (e) {
+                    console.error('Error parsing item data:', e);
+                    return;
+                }
             }
         }
         if (!data) return;
 
-        // Заполнить форму редактирования
         document.getElementById('edit-item-name').value = data.name || '';
         document.getElementById('edit-item-description').value = data.desc || '';
         document.getElementById('edit-item-price').value = data.price ? data.price.replace(' ₽', '') : '';
         document.getElementById('edit-item-url').value = data.link || '';
 
-        // Показать текущее изображение, если оно есть
         const currentImageDiv = document.getElementById('edit-current-image');
         const imagePreview = document.getElementById('edit-image-preview');
         if (data.image) {
@@ -417,14 +518,11 @@
             currentImageDiv.classList.add('hidden');
         }
 
-        // Закрыть модальное окно просмотра
         closeItemModal();
 
-        // Открыть модальное окно редактирования
         document.getElementById('edit-item-modal').classList.remove('hidden');
         document.getElementById('edit-item-modal-overlay').classList.remove('hidden');
 
-        // Обработчик отправки формы
         document.getElementById('edit-item-form').onsubmit = function (e) {
             e.preventDefault();
 
@@ -439,7 +537,6 @@
                 formData.append('item_image', imageInput.files[0]);
             }
 
-            // Отправляем запрос на сервер
             fetch(`/update_item/${itemId}/`, {
                 method: 'POST',
                 headers: {
@@ -467,7 +564,6 @@
         document.getElementById('edit-item-modal-overlay').classList.add('hidden');
     }
 
-    // Предпросмотр загружаемого изображения
     document.getElementById('edit-item-image').addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (file) {
@@ -508,7 +604,6 @@
     document.getElementById('create-item-form').addEventListener('submit', function (e) {
         e.preventDefault();
 
-        // Получаем значения полей
         const name = document.getElementById('item-name').value;
         if (!name) {
             alert("Заполните название элемента");
@@ -523,7 +618,6 @@
             return;
         }
 
-        // Добавляем данные в FormData
         formData.append('wishlist_id', wishlistId);
         formData.append('item_name', name);
         formData.append('item_desc', document.getElementById('item-description').value);
@@ -535,7 +629,6 @@
             formData.append('item_image', imageInput.files[0]);
         }
 
-        // Отправляем запрос
         fetch('/create_wish/', {
             method: 'POST',
             headers: {
@@ -546,7 +639,6 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Перезагружаем страницу для отображения нового элемента
                     window.location.reload();
                 } else {
                     alert(data.error || "Ошибка при создании элемента");

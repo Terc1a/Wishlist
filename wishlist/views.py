@@ -11,7 +11,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 from django.views.decorators.http import require_http_methods
 
-from .models import Wish, Wishlist, WishLike, WishFav
+from .models import Wish, Wishlist, WishLike, WishFav, WishReserved
 
 
 @require_http_methods(["GET", "POST"])
@@ -244,6 +244,44 @@ def set_like(request, wishlist_id):
     else:
         return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
 
+
+@login_required
+def reserve_item(request, item_id):
+    if request.method == "POST":
+        try:
+            wish = Wish.objects.get(id=item_id)
+            print(wish)
+            print(request.user)
+            reserved, created = WishReserved.objects.get_or_create(user=request.user, wish=wish)
+            print(reserved, created, 'tut')
+            if created:
+                print('succes epta')
+                return JsonResponse({"success": True})
+            else:
+                return JsonResponse({"success": False, "error": "Already reserved"})
+        except Exception as e:
+                        # Более детальный вывод ошибки
+            print(f"Error: {str(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
+            return JsonResponse({"success": False, "error": f"Something went wrong: {str(e)}"})
+
+
+@login_required
+def cancel_reservation(request, item_id):
+    if request.method == "POST":
+        try:
+            wish = Wish.objects.get(id=item_id)
+            # Удаляем бронь текущего пользователя для этого wish
+            deleted_count = WishReserved.objects.filter(user=request.user, wish=wish).delete()[0]
+            if deleted_count > 0:
+                return JsonResponse({"success": True})
+            else:
+                return JsonResponse({"success": False, "error": "Reservation not found"})
+        except Wish.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Wish not found"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
 
 @login_required
 def profile(request, user_id):

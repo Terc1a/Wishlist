@@ -47,6 +47,20 @@ class WishLike(models.Model):
         return f"{self.user.username} likes {self.wishlist.item_name}"
 
 
+class WishReserved(models.Model):
+    """
+    Model to store wish reservation.
+    """
+    wish = models.ForeignKey(Wish, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('wish', 'user')
+
+    def __str__(self):
+        return f"{self.user} reserved {self.wish}"    
+
 class WishFav(models.Model):
     """
     Model to store likes for wishes.
