@@ -28,6 +28,10 @@ class Wish(models.Model):
     item_image = models.ImageField(upload_to="images/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def is_reserved(self):
+        return hasattr(self, 'wishreserved_set') and self.wishreserved_set.exists()
+
     def __str__(self):
         return self.item_name
 
