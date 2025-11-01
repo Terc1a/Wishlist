@@ -152,19 +152,21 @@ def create_wish(request):
         wishlist = Wishlist.objects.get(id=wishlist_id)
         image = request.FILES.get("item_image")  # Получаем файл
         date = datetime.now()
+        price_str = items.get("item_price")
+        price = float(price_str) if price_str else None
 
         add_wish = Wish(
             item_name=items["item_name"],
             item_description=items["item_desc"],
             item_url=items["item_link"],
-            item_price=float(items["item_price"]),
-            item_image= image,  # Handle optional image
+            item_price=price,
+            item_image=image,  # Handle optional image
             created_at=date,
             wishlist=wishlist,
         )
         add_wish.save()
 
-        return JsonResponse({'success': True})
+        return redirect('wishlist_detail', wishlist_id=wishlist_id)
     else:
         return render(request, "index.html")
 

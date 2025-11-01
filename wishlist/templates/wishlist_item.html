@@ -83,29 +83,31 @@
         </svg>
     </button>
     <h2 class="text-3xl font-bold mb-6">Добавить новый элемент</h2>
-    <form id="create-item-form" class="space-y-6">
+    <form action="{% url 'create_wish' %}" method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        <input type="hidden" name="wishlist_id" value="{{ wishlist.id }}">
         <div class="grid grid-cols-2 gap-6">
             <div class="col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Название</label>
-                <input type="text" id="item-name" required
+                <input type="text" name="item_name" required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
 
             <div class="col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Описание</label>
-                <textarea id="item-description" rows="3" required
+                <textarea name="item_desc" rows="3" required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"></textarea>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Цена</label>
-                <input type="number" id="item-price"
+                <input type="number" name="item_price"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Ссылка на товар</label>
-                <input type="url" id="item-url"
+                <input type="url" name="item_link"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
 
@@ -123,7 +125,7 @@
                             <label for="item-image"
                                 class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                                 <span>Загрузить изображение</span>
-                                <input id="item-image" type="file" accept="image/*" class="sr-only">
+                                <input name="item_image" id="item-image" type="file" accept="image/*" class="sr-only">
                             </label>
                         </div>
                         <p class="text-xs text-gray-500">PNG, JPG до 10MB</p>
@@ -601,57 +603,7 @@
         document.getElementById('create-item-modal-overlay').classList.add('hidden');
     }
 
-    document.getElementById('create-item-form').addEventListener('submit', function (e) {
-        e.preventDefault();
 
-        const name = document.getElementById('item-name').value;
-        if (!name) {
-            alert("Заполните название элемента");
-            return;
-        }
-
-        const formData = new FormData();
-        const wishlistId = document.getElementById('wishlist-data').dataset.wishlistId;
-
-        if (!wishlistId) {
-            alert("Ошибка: ID вишлиста не найден");
-            return;
-        }
-
-        formData.append('wishlist_id', wishlistId);
-        formData.append('item_name', name);
-        formData.append('item_desc', document.getElementById('item-description').value);
-        formData.append('item_link', document.getElementById('item-url').value);
-        formData.append('item_price', document.getElementById('item-price').value);
-
-        const imageInput = document.getElementById('item-image');
-        if (imageInput && imageInput.files.length > 0) {
-            formData.append('item_image', imageInput.files[0]);
-        }
-
-        fetch('/create_wish/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert(data.error || "Ошибка при создании элемента");
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Ошибка при создании элемента');
-            })
-            .finally(() => {
-                closeCreateItemModal();
-            });
-    });
 
     function openEditWishlistModal() {
         document.getElementById('edit-wishlist-modal').classList.remove('hidden');
